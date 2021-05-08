@@ -1,3 +1,5 @@
+import json
+
 from django.http import JsonResponse
 from django.shortcuts import render
 
@@ -9,6 +11,10 @@ import cv2
 import numpy as np
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
+from sklearn.linear_model import LinearRegression
+
+from image_detection import least_square
+from image_detection.log import logger
 
 
 class ImgGrayscale:
@@ -41,6 +47,29 @@ class ImgGrayscale:
         return new_img
 
 
+def get_arguments(request):
+    """
+    获取请求参数
+    :param request:
+    :return:
+    """
+    if request.method == 'GET':
+        logger.info("收到GET请求")
+        arguments = dict(request.GET)
+        for arg in arguments:
+            if type(arguments[arg]) == type([]):
+                arguments[arg] = arguments[arg][0]
+    else:
+        logger.info("收到POST请求")
+        logger.info("post-body")
+        logger.info(request.body.decode())
+        if "form" in request.content_type:
+            arguments = request.POST
+        else:
+            arguments = json.loads(request.body.decode())
+    return arguments
+
+
 class WebImgGrayscale(View):
     """
     get: 通过图片灰度获取浓度
@@ -71,3 +100,106 @@ class WebImgGrayscale(View):
             traceback.print_exc()
             return JsonResponse({"status": 500, "msg": "异常!", "errMsg": traceback.format_exc()},
                                 json_dumps_params={'ensure_ascii': False})
+
+
+def get_concentration_by_least_square(request):
+    try:
+        arguments = get_arguments(request)
+        file1 = request.FILES["file1"]
+        file2 = request.FILES["file2"]
+        file3 = request.FILES["file3"]
+        file4 = request.FILES["file4"]
+        file5 = request.FILES["file5"]
+        file6 = request.FILES["file6"]
+        file7 = request.FILES["file7"]
+        file8 = request.FILES["file8"]
+
+        img1_con = arguments.get("img1_con", None)
+        img2_con = arguments.get("img2_con", None)
+        img3_con = arguments.get("img3_con", None)
+        img4_con = arguments.get("img4_con", None)
+        img5_con = arguments.get("img5_con", None)
+        img6_con = arguments.get("img6_con", None)
+        img7_con = arguments.get("img7_con", None)
+
+        if not file1 or not file2 or not file3 or not file4 or not file5 or not file6 or not file7 or not file8:
+            return JsonResponse({"status": 201, "msg": "请上传图片", "data": None},
+                                json_dumps_params={'ensure_ascii': False})
+        if not img1_con or not img2_con or not img3_con or not img4_con or not img5_con or not img6_con or not img7_con:
+            return JsonResponse({"status": 202, "msg": "请上传前七张图片的浓度", "data": None},
+                                json_dumps_params={'ensure_ascii': False})
+        file_img1 = file1.file.read()
+        file_img2 = file2.file.read()
+        file_img3 = file3.file.read()
+        file_img4 = file4.file.read()
+        file_img5 = file5.file.read()
+        file_img6 = file6.file.read()
+        file_img7 = file7.file.read()
+        file_img8 = file8.file.read()
+
+        # cv2读取字节流数据
+        cv_img1 = cv2.imdecode(np.frombuffer(file_img1, np.uint8), 0)
+        cut_img1 = ImgGrayscale.center_crop(cv_img1, int(cv_img1.shape[1] * 0.8), int(cv_img1.shape[0] * 0.8))
+        mean1, std = cv2.meanStdDev(cut_img1)
+        value_mean1 = mean1[0, 0]  # 图片灰度
+
+        cv_img2 = cv2.imdecode(np.frombuffer(file_img2, np.uint8), 0)
+        cut_img2 = ImgGrayscale.center_crop(cv_img2, int(cv_img2.shape[1] * 0.8), int(cv_img2.shape[0] * 0.8))
+        mean2, std = cv2.meanStdDev(cut_img2)
+        value_mean2 = mean2[0, 0]
+
+        cv_img3 = cv2.imdecode(np.frombuffer(file_img3, np.uint8), 0)
+        cut_img3 = ImgGrayscale.center_crop(cv_img3, int(cv_img3.shape[1] * 0.8), int(cv_img3.shape[0] * 0.8))
+        mean3, std = cv2.meanStdDev(cut_img3)
+        value_mean3 = mean3[0, 0]
+
+        cv_img4 = cv2.imdecode(np.frombuffer(file_img4, np.uint8), 0)
+        cut_img4 = ImgGrayscale.center_crop(cv_img4, int(cv_img4.shape[1] * 0.8), int(cv_img4.shape[0] * 0.8))
+        mean4, std = cv2.meanStdDev(cut_img4)
+        value_mean4 = mean4[0, 0]
+
+        cv_img5 = cv2.imdecode(np.frombuffer(file_img5, np.uint8), 0)
+        cut_img5 = ImgGrayscale.center_crop(cv_img5, int(cv_img5.shape[1] * 0.8), int(cv_img5.shape[0] * 0.8))
+        mean5, std = cv2.meanStdDev(cut_img5)
+        value_mean5 = mean5[0, 0]
+
+        cv_img6 = cv2.imdecode(np.frombuffer(file_img6, np.uint8), 0)
+        cut_img6 = ImgGrayscale.center_crop(cv_img6, int(cv_img6.shape[1] * 0.8), int(cv_img6.shape[0] * 0.8))
+        mean6, std = cv2.meanStdDev(cut_img6)
+        value_mean6 = mean6[0, 0]
+
+        cv_img7 = cv2.imdecode(np.frombuffer(file_img7, np.uint8), 0)
+        cut_img7 = ImgGrayscale.center_crop(cv_img7, int(cv_img7.shape[1] * 0.8), int(cv_img7.shape[0] * 0.8))
+        mean7, std = cv2.meanStdDev(cut_img7)
+        value_mean7 = mean7[0, 0]
+
+        cv_img8 = cv2.imdecode(np.frombuffer(file_img8, np.uint8), 0)
+        cut_img8 = ImgGrayscale.center_crop(cv_img8, int(cv_img8.shape[1] * 0.8), int(cv_img8.shape[0] * 0.8))
+        mean8, std = cv2.meanStdDev(cut_img8)
+        value_mean8 = mean8[0, 0]
+
+        x = np.array([[img1_con], [img2_con], [img3_con], [img4_con], [img5_con], [img6_con], [img7_con]])  # 已知浓度
+        y = np.array([[value_mean1], [value_mean2], [value_mean3], [value_mean4],
+                      [value_mean5], [value_mean6], [value_mean7]])  # 根据图片求灰度
+
+        # plt.plot(x, y, 'k.')
+
+        features = x.reshape(-1, 1)
+        target = y
+
+        regression = LinearRegression()
+        model = regression.fit(features, target)
+
+        # model为已知直线（浓度与灰度的直线方程）。
+        # 现给出直线上的点（x2[1], y2[1]） (x2[2], y2[2]) 得出斜率，再通过least_square.func，给定灰度，求浓度
+        x2 = np.array([[0], [0.15], [0.25], [0.45], [0.7]])
+        y2 = model.predict(x2)
+
+        x_pre = least_square.func(x2[1], y2[1], x2[2], y2[2], value_mean8)
+
+        return JsonResponse({"status": 200, "msg": "success", "data": format(x_pre, '.5f')},
+                            json_dumps_params={'ensure_ascii': False})
+    except Exception:
+        traceback.print_exc()
+        return JsonResponse({"status": 500, "msg": "异常!", "errMsg": traceback.format_exc()},
+                            json_dumps_params={'ensure_ascii': False})

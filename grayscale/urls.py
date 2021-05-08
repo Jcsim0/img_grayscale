@@ -16,9 +16,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from image_detection.views import WebImgGrayscale
+from image_detection.views import WebImgGrayscale, get_concentration_by_least_square
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('img/getConByImgGrayscale', WebImgGrayscale.as_view(), name="web_img_grayscale"),
+    path('img/getConByLS', get_concentration_by_least_square,
+         name="get_concentration_by_least_square"),
 ]
