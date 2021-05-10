@@ -104,7 +104,7 @@ class WebImgGrayscale(View):
 
 def get_concentration_by_least_square(request):
     try:
-        arguments = get_arguments(request)
+
         file1 = request.FILES["file1"]
         file2 = request.FILES["file2"]
         file3 = request.FILES["file3"]
@@ -114,20 +114,28 @@ def get_concentration_by_least_square(request):
         file7 = request.FILES["file7"]
         file8 = request.FILES["file8"]
 
-        img1_con = arguments.get("img1_con", None)
-        img2_con = arguments.get("img2_con", None)
-        img3_con = arguments.get("img3_con", None)
-        img4_con = arguments.get("img4_con", None)
-        img5_con = arguments.get("img5_con", None)
-        img6_con = arguments.get("img6_con", None)
-        img7_con = arguments.get("img7_con", None)
+        # arguments = arguments = get_arguments(request)
+        # img1_con = arguments.get("img1_con", None)
+        # img2_con = arguments.get("img2_con", None)
+        # img3_con = arguments.get("img3_con", None)
+        # img4_con = arguments.get("img4_con", None)
+        # img5_con = arguments.get("img5_con", None)
+        # img6_con = arguments.get("img6_con", None)
+        # img7_con = arguments.get("img7_con", None)
+        img1_con = 0
+        img2_con = 0.5
+        img3_con = 1
+        img4_con = 2.5
+        img5_con = 5
+        img6_con = 7.5
+        img7_con = 10
 
         if not file1 or not file2 or not file3 or not file4 or not file5 or not file6 or not file7 or not file8:
             return JsonResponse({"status": 201, "msg": "请上传图片", "data": None},
                                 json_dumps_params={'ensure_ascii': False})
-        if not img1_con or not img2_con or not img3_con or not img4_con or not img5_con or not img6_con or not img7_con:
-            return JsonResponse({"status": 202, "msg": "请上传前七张图片的浓度", "data": None},
-                                json_dumps_params={'ensure_ascii': False})
+        # if not img1_con or not img2_con or not img3_con or not img4_con or not img5_con or not img6_con or not img7_con:
+        #     return JsonResponse({"status": 202, "msg": "请上传前七张图片的浓度", "data": None},
+        #                         json_dumps_params={'ensure_ascii': False})
         file_img1 = file1.file.read()
         file_img2 = file2.file.read()
         file_img3 = file3.file.read()
@@ -197,7 +205,7 @@ def get_concentration_by_least_square(request):
 
         x_pre = least_square.func(x2[1], y2[1], x2[2], y2[2], value_mean8)
 
-        return JsonResponse({"status": 200, "msg": "success", "data": format(x_pre, '.5f')},
+        return JsonResponse({"status": 200, "msg": "success", "data": format(x_pre[0], '.5f')},
                             json_dumps_params={'ensure_ascii': False})
     except Exception:
         traceback.print_exc()
