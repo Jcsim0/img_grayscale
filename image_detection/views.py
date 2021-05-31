@@ -1,5 +1,7 @@
+import datetime
 import json
 
+import bluetooth
 from django.http import JsonResponse
 from django.shortcuts import render
 
@@ -14,7 +16,9 @@ from django.views.decorators.csrf import csrf_exempt
 from sklearn.linear_model import LinearRegression
 
 from image_detection import least_square
+from image_detection.bluetoothUtil import BluetoothConnection
 from image_detection.log import logger
+from image_detection.utils import DateUtil
 
 
 class ImgGrayscale:
@@ -211,3 +215,62 @@ def get_concentration_by_least_square(request):
         traceback.print_exc()
         return JsonResponse({"status": 500, "msg": "异常!", "errMsg": traceback.format_exc()},
                             json_dumps_params={'ensure_ascii': False})
+
+
+def search_bt(request):
+    b = BluetoothConnection()
+    b.find_nearby_devices()
+    data = []
+    for addr, name in b.nearby_devices:
+        bt = {
+            "bt_name": name,
+            "bt_addr": addr
+        }
+        data.append(bt)
+    return JsonResponse({"status": 200, "msg": "success", "data": data},
+                        json_dumps_params={'ensure_ascii': False})
+
+
+def connect_bt(request):
+    try:
+        arguments = get_arguments(request)
+        bt_name = arguments.get("bt_name", None)
+        bt_addr = arguments.get("bt_addr", None)
+        if not bt_name or not bt_addr:
+            return JsonResponse({"status": 201, "msg": "请选择需要连接的蓝牙设备", "data": None},
+                                json_dumps_params={'ensure_ascii': False})
+        logger.info(
+            "===============【{}】准备连接目标设备：设备名【{}】，地址【{}】。===============".format(DateUtil.get_now_datetime(), bt_name, bt_addr))
+
+        sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+        try:
+            sock.connect((bt_addr, 1))
+            logger.info(
+                "===============【{}】连接目标设备成功。准备接受数据!===============".format(DateUtil.get_now_datetime()))
+            data_dtr = ""
+            # 以下代码根据需求更改
+            while True:
+                data = sock.recv(1024)
+                data_dtr += data.decode()
+                if '\n' in data.decode():
+                    # data_dtr[:-2] 截断"\t\n",只输出数据
+                    print(datetime.datetime.now().strftime("%H:%M:%S")+"->"+data_dtr[:-2])
+                    data_dtr = ""
+        except Exception as e:
+            traceback.print_exc()
+            logger.info(
+                "===============【{}】连接目标失败，请重新连接。===============".format(DateUtil.get_now_datetime()))
+            connect = False
+            sock.close()
+            return JsonResponse({"status": 202, "msg": "连接目标失败，请重新连接", "data": None},
+                                json_dumps_params={'ensure_ascii': False})
+    except Exception:
+        traceback.print_exc()
+        return JsonResponse({"status": 500, "msg": "异常!", "errMsg": traceback.format_exc()},
+                            json_dumps_params={'ensure_ascii': False})
+
+
+class ToView(View):
+    @staticmethod
+    def go_to(request, to):
+        return render(request, "pay_info.html")

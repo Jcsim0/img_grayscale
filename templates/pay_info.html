@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<header>
+    <meta charset="UTF-8">
+    <title>pay</title>
+    <link rel="stylesheet" href="http://49.232.24.234:81/static/layui/css/layui.css">
+    <style>
+        .payBox{
+            margin: auto 0;
+            text-align: center;
+        }
+        .orderNO {
+            color: red;
+        }
+        .amount{
+            color: red;
+        }
+        .password{
+            color: red;
+        }
+        .project_name{
+            color: red;
+            {#font-size: 16px;#}
+        }
+        .tips{
+            color: red;
+            font-size: 16px;
+        }
+    </style>
+</header>
+
+<body>
+
+{#    <div id="app">#}
+{#        <div class="payBox">#}
+{#            <br>#}
+{#            <p>您正在支付的产品为：<span class="project_name"></span></p><br>#}
+{#            <p>订单编号：<span class="orderNO"></span> 金额：<span class="amount"> </span>元</p><br>#}
+{#            <p style="color: red;font-size: 20px">请使用支付宝扫描下面的二维码</p>#}
+{#            <div id="qrcode"></div>#}
+{#            <p><i class="layui-icon layui-icon-password"></i>解压密码(请惠存)：<span class="password">******</span></p>#}
+{#            <p style="margin-top: 0%;">#}
+{#                <span class="tips">重要！支付完成自动返回密码，请不要关闭本页面，遇到问题请及时联系客服!!!</span>#}
+{#                <br>#}
+{#                <span class="tips">如提示支付超时，刷新页面可重新支付。</span>#}
+{#            </p>#}
+{#        </div>#}
+{#    </div>#}
+</body>
+<!-- import JavaScript -->
+<script type="text/javascript" src="http://49.232.24.234:81/static/js/jquery.min.js"></script>
+<script type="text/javascript" src="http://49.232.24.234:81/static/layui/layui.js"></script>
+<script>
+    let createWebSocket = (function () {
+            return function (urlValue) {
+                if (window.WebSocket) return new WebSocket(urlValue);
+                if (window.MozWebSocket) return new MozWebSocket(urlValue);
+                return false;
+            }
+        })();
+    (function ($) {
+        $.getUrlParam = function (name) {
+            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+            var r = window.location.search.substr(1).match(reg);
+            if (r != null)
+                return decodeURI(r[2]); // decodeURI(r[2]); 解决参数是中文时的乱码问题
+            return null;
+        }
+    })(jQuery);
+    let layer
+    layui.use(['layer'], function(){
+        layer = layui.layer
+    });
+    let timeout_express = 10
+    {# 获取商品编号 #}
+    const project_no = $.getUrlParam("prono")
+    {#const address = "49.232.24.234:81"#}
+    const address = window.location.host
+    let order_no = ""
+    $(function () {
+        const socket1 = createWebSocket("ws://"+address+"/ws/bt/connect")
+        let send_data = {
+            "bt_name": "BT04-A",
+            "bt_addr": "B4:4B:0E:04:16:25"
+        }
+        socket1.onopen = () => {
+            $(document).ready(() => {
+                socket1.send(JSON.stringify(send_data))
+            })
+        }
+        socket1.onmessage = (serverPush) => {
+            let data = JSON.parse(serverPush.data)
+            $(".project_name").text(data.project_name)
+            if (data.status !== 200){
+                 if(data.status === 404){
+                    $("#qrcode").append('<p style="color: red;font-size: 20px">'+ data.msg +'</p>')
+                }
+                layer.msg(data.msg)
+            }else{
+                let data = JSON.parse(serverPush.data)
+                $(".project_name").text(data.project_name)
+                $(".orderNO").text(data.orderNo)
+                $(".amount").text(data.amount)
+                $(".password").text(data.password)
+                $("#qrcode").append("<img src="+ data.qr_img+ ">")
+                timeout_express = data.timeout_express
+                sock_fun(data.orderNo)
+            }
+        }
+        socket1.onclose = () =>{
+            socket1.close()
+        }
+
+    })
+
+    function sock_fun(order_no){
+        const tradeNo = order_no
+        const socket = createWebSocket("ws://"+address+"/ws/qosws")
+        {#const socket = createWebSocket("ws://49.232.24.234:81/ws/qosws")#}
+        {#console.log("传数据==")#}
+        let send_data = {
+            "tradeNo": tradeNo
+        }
+        socket.onopen = () => {
+            $(document).ready(() => {
+                {#console.log('WebSocket open');//成功连接上Websocket#}
+                socket.send(JSON.stringify(send_data))
+            })
+        }
+        {#console.log("获取数据==")#}
+        socket.onmessage = (serverPush) => {
+            {#console.log(serverPush)#}
+            let data = JSON.parse(serverPush.data)
+            {#console.log(data.password)#}
+            if (data.status === 200){
+                $(".password").text(data.password)
+                layer.msg("支付成功，请保存密码")
+            }
+        }
+
+        const timer2 = self.setInterval(() =>{
+            socket.send(JSON.stringify(send_data))
+        }, 3000)
+        const timer_close = setTimeout(() =>{
+            {#console.log("===关闭定时器====",{{ timeout_express }})#}
+            clearInterval(timer2)
+            socket.close()
+        }, 60000*timeout_express )
+
+        socket.onclose = () =>{
+            clearInterval(timer2)
+            clearTimeout(timer_close)
+            socket.close()
+        }
+    }
+
+
+
+</script>
+
+</html>
