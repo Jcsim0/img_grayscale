@@ -24,6 +24,6 @@ urlpatterns = [
     path('img/getConByLS', get_concentration_by_least_square,
          name="get_concentration_by_least_square"),
     path('bt/search', search_bt, name="search_bt"),
-    path('bt/connect', connect_bt, name="connect_bt"),
+    # path('bt/connect', connect_bt, name="connect_bt"),
     path('to/<to>', ToView.go_to, name="ss"),
 ]
