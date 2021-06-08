@@ -24,10 +24,13 @@ from image_detection.utils import DateUtil
 
 
 class BtConnectConsumers(WebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.sock = None
+        print("===s=s=s=s=s=s=s=s=s=s")
+
     def connect(self):
         self.accept()
-        self.sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-        print(55)
 
     def disconnect(self, close_code):
         pass
@@ -37,14 +40,15 @@ class BtConnectConsumers(WebsocketConsumer):
             # 这里是接受数据后的操作，下面的方法按需修改
             text_data_json = json.loads(text_data)
             code_ = text_data_json.get("code", None)
-            print("=================================================================")
+            # print("=================================================================",self.sock)
             # sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
             try:
                 print("==========={}:code={}=========".format(DateUtil.get_now_datetime(), code_))
-                if code_ == "10":
+                if code_ == "10" and not self.sock:
+                    self.sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
                     bt_name = text_data_json.get("bt_name", None)
                     bt_addr = text_data_json.get("bt_addr", None)
-                    if not bt_name or not bt_addr:
+                    if not bt_addr:
                         return JsonResponse({"status": 201, "msg": "请选择需要连接的蓝牙设备", "data": None},
                                             json_dumps_params={'ensure_ascii': False})
                     logger.info(
@@ -60,20 +64,20 @@ class BtConnectConsumers(WebsocketConsumer):
                         "===============【{}】连接目标设备成功。准备接受数据!===============".format(DateUtil.get_now_datetime()))
                 # 以下代码根据需求更改
 
-                if code_ == "0" or code_ == "1" or code_ == "2":
+                if self.sock and (code_ == "0" or code_ == "1" or code_ == "2"):
                     logger.info(
                         "===============【{}】准备发送数据：{}===============".format(DateUtil.get_now_datetime(), code_))
                     self.sock.send(code_)
-                    # data_dtr = ""
-                    # while True:
-                    #     data = self.sock.recv(1024)
-                    #     # print(data)
-                    #     data_dtr += data.decode()
-                    #     if '\n' in data.decode():
-                    #         # data_dtr[:-2] 截断"\t\n",只输出数据
-                    #         print(datetime.datetime.now().strftime("%H:%M:%S") + "->" + data_dtr)
-                    #         break
-                if code_ == 20:
+                    data_dtr = ""
+                    while True:
+                        data = self.sock.recv(1024)
+                        # print(data)
+                        data_dtr += data.decode()
+                        if '\n' in data.decode():
+                            # data_dtr[:-2] 截断"\t\n",只输出数据
+                            print(datetime.datetime.now().strftime("%H:%M:%S") + "->" + data_dtr)
+                            break
+                if self.sock and code_ == 20:
                     logger.info(
                         "===============【{}】 准备断开连接!===============".format(DateUtil.get_now_datetime()))
                     self.sock.close()

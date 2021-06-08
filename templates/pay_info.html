@@ -59,15 +59,15 @@
         })();
 
     let layer
-    layui.use(['layer'], function(){
-        layer = layui.layer
-    });
+
     let timeout_express = 10
     {#const address = "49.232.24.234:81"#}
     const address = window.location.host
     let order_no = ""
     $(function () {
-
+        layui.use(['layer'], function(){
+                layer = layui.layer
+            });
     })
     $("#search").click(function (){
         $.ajax({
@@ -82,6 +82,10 @@
     })
     let socket1
     $("#connect").click(function () {
+        if (socket1){
+            layer.msg("请先断开连接")
+            return
+        }
         socket1 = createWebSocket("ws://"+address+"/ws/bt/connect")
         let send_data = {
             "bt_name": "BT04-A",
@@ -94,11 +98,17 @@
             })
         }
         socket1.onmessage = (serverPush) => {
-
+            let data = JSON.parse(serverPush.data)
+            if (data.status === 200){
+                layer.msg("连接成功")
+            }
         }
         socket1.onclose = () =>{
-            console.log("close")
+            {#console.log("close")#}
             socket1.close()
+            layer.msg("蓝牙已断开")
+            socket1 = null
+            {#console.log("socket1==",socket1)#}
         }
     })
 
@@ -113,11 +123,14 @@
         let send_data = {
             "code": order_no
         }
-        console.log(send_data)
+        {#console.log(send_data)#}
         socket1.send(JSON.stringify(send_data))
     }
-
-
+    window.onbeforeunload = function(event) {
+        sock_fun(20)
+        socket1 = null
+        event.returnValue = "关闭连接";
+    };
 
 </script>
 

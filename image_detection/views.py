@@ -221,12 +221,13 @@ def search_bt(request):
     b = BluetoothConnection()
     b.find_nearby_devices()
     data = []
-    for addr, name in b.nearby_devices:
-        bt = {
-            "bt_name": name,
-            "bt_addr": addr
-        }
-        data.append(bt)
+    if b.nearby_devices:
+        for addr, name in b.nearby_devices:
+            bt = {
+                "bt_name": name,
+                "bt_addr": addr
+            }
+            data.append(bt)
     return JsonResponse({"status": 200, "msg": "success", "data": data},
                         json_dumps_params={'ensure_ascii': False})
 
