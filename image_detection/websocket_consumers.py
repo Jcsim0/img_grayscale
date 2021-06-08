@@ -27,12 +27,12 @@ class BtConnectConsumers(WebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.sock = None
-        print("===s=s=s=s=s=s=s=s=s=s")
 
     def connect(self):
         self.accept()
 
     def disconnect(self, close_code):
+        print("clossssssssssssssssssssss")
         pass
 
     def receive(self, text_data):
@@ -44,7 +44,11 @@ class BtConnectConsumers(WebsocketConsumer):
             # sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
             try:
                 print("==========={}:code={}=========".format(DateUtil.get_now_datetime(), code_))
-                if code_ == "10" and not self.sock:
+                if code_ == "10":
+                    if self.sock:
+                        self.sock.close()
+                        # self.close()
+                        # self.sock = None
                     self.sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
                     bt_name = text_data_json.get("bt_name", None)
                     bt_addr = text_data_json.get("bt_addr", None)
@@ -63,7 +67,6 @@ class BtConnectConsumers(WebsocketConsumer):
                     logger.info(
                         "===============【{}】连接目标设备成功。准备接受数据!===============".format(DateUtil.get_now_datetime()))
                 # 以下代码根据需求更改
-
                 if self.sock and (code_ == "0" or code_ == "1" or code_ == "2"):
                     logger.info(
                         "===============【{}】准备发送数据：{}===============".format(DateUtil.get_now_datetime(), code_))
@@ -75,7 +78,8 @@ class BtConnectConsumers(WebsocketConsumer):
                         data_dtr += data.decode()
                         if '\n' in data.decode():
                             # data_dtr[:-2] 截断"\t\n",只输出数据
-                            print(datetime.datetime.now().strftime("%H:%M:%S") + "->" + data_dtr)
+                            # print(datetime.datetime.now().strftime("%H:%M:%S") + "->" + data_dtr[:-2])
+                            self.send(text_data=json.dumps(data_dtr[:-2]))
                             break
                 if self.sock and code_ == 20:
                     logger.info(

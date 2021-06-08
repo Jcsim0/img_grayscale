@@ -105,10 +105,11 @@
         }
         socket1.onclose = () =>{
             {#console.log("close")#}
-            socket1.close()
+            console.log("socket1==",socket1)
+            {#socket1.close()#}
             layer.msg("蓝牙已断开")
             socket1 = null
-            {#console.log("socket1==",socket1)#}
+            console.log("socket1==",socket1)
         }
     })
 
@@ -116,7 +117,11 @@
         sock_fun("0")
     })
     $("#stop").click(function () {
-        sock_fun(20)
+        if (socket1){
+            sock_fun(20)
+        }
+
+        {#socket1.close()#}
     })
 
     function sock_fun(order_no){
@@ -126,11 +131,7 @@
         {#console.log(send_data)#}
         socket1.send(JSON.stringify(send_data))
     }
-    window.onbeforeunload = function(event) {
-        sock_fun(20)
-        socket1 = null
-        event.returnValue = "关闭连接";
-    };
+
 
 </script>
 

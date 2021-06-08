@@ -1,5 +1,6 @@
 import datetime
 import json
+import math
 
 import bluetooth
 from django.http import JsonResponse
@@ -232,39 +233,101 @@ def search_bt(request):
                         json_dumps_params={'ensure_ascii': False})
 
 
-def connect_bt(request):
+def get_concentration_by_least_square_with_ln(request):
     try:
-        arguments = get_arguments(request)
-        bt_name = arguments.get("bt_name", None)
-        bt_addr = arguments.get("bt_addr", None)
-        if not bt_name or not bt_addr:
-            return JsonResponse({"status": 201, "msg": "请选择需要连接的蓝牙设备", "data": None},
-                                json_dumps_params={'ensure_ascii': False})
-        logger.info(
-            "===============【{}】准备连接目标设备：设备名【{}】，地址【{}】。===============".format(DateUtil.get_now_datetime(), bt_name, bt_addr))
 
-        sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-        try:
-            sock.connect((bt_addr, 1))
-            logger.info(
-                "===============【{}】连接目标设备成功。准备接受数据!===============".format(DateUtil.get_now_datetime()))
-            data_dtr = ""
-            # 以下代码根据需求更改
-            while True:
-                data = sock.recv(1024)
-                data_dtr += data.decode()
-                if '\n' in data.decode():
-                    # data_dtr[:-2] 截断"\t\n",只输出数据
-                    print(datetime.datetime.now().strftime("%H:%M:%S")+"->"+data_dtr[:-2])
-                    data_dtr = ""
-        except Exception as e:
-            traceback.print_exc()
-            logger.info(
-                "===============【{}】连接目标失败，请重新连接。===============".format(DateUtil.get_now_datetime()))
-            connect = False
-            sock.close()
-            return JsonResponse({"status": 202, "msg": "连接目标失败，请重新连接", "data": None},
+        file1 = request.FILES["file1"]
+        file2 = request.FILES["file2"]
+        file3 = request.FILES["file3"]
+        file4 = request.FILES["file4"]
+        file5 = request.FILES["file5"]
+        file6 = request.FILES["file6"]
+        file7 = request.FILES["file7"]
+        file8 = request.FILES["file8"]
+
+        img1_con = math.log10(0.001)
+        img2_con = math.log10(0.01)
+        img3_con = math.log10(0.1)
+        img4_con = math.log10(1)
+        img5_con = math.log10(10)
+        img6_con = math.log10(100)
+        img7_con = math.log10(1000)
+
+        if not file1 or not file2 or not file3 or not file4 or not file5 or not file6 or not file7 or not file8:
+            return JsonResponse({"status": 201, "msg": "请上传图片", "data": None},
                                 json_dumps_params={'ensure_ascii': False})
+
+        file_img1 = file1.file.read()
+        file_img2 = file2.file.read()
+        file_img3 = file3.file.read()
+        file_img4 = file4.file.read()
+        file_img5 = file5.file.read()
+        file_img6 = file6.file.read()
+        file_img7 = file7.file.read()
+        file_img8 = file8.file.read()
+
+        # cv2读取字节流数据
+        cv_img1 = cv2.imdecode(np.frombuffer(file_img1, np.uint8), 0)
+        cut_img1 = ImgGrayscale.center_crop(cv_img1, int(cv_img1.shape[1] * 0.8), int(cv_img1.shape[0] * 0.8))
+        mean1, std = cv2.meanStdDev(cut_img1)
+        value_mean1 = mean1[0, 0]  # 图片灰度
+
+        cv_img2 = cv2.imdecode(np.frombuffer(file_img2, np.uint8), 0)
+        cut_img2 = ImgGrayscale.center_crop(cv_img2, int(cv_img2.shape[1] * 0.8), int(cv_img2.shape[0] * 0.8))
+        mean2, std = cv2.meanStdDev(cut_img2)
+        value_mean2 = mean2[0, 0]
+
+        cv_img3 = cv2.imdecode(np.frombuffer(file_img3, np.uint8), 0)
+        cut_img3 = ImgGrayscale.center_crop(cv_img3, int(cv_img3.shape[1] * 0.8), int(cv_img3.shape[0] * 0.8))
+        mean3, std = cv2.meanStdDev(cut_img3)
+        value_mean3 = mean3[0, 0]
+
+        cv_img4 = cv2.imdecode(np.frombuffer(file_img4, np.uint8), 0)
+        cut_img4 = ImgGrayscale.center_crop(cv_img4, int(cv_img4.shape[1] * 0.8), int(cv_img4.shape[0] * 0.8))
+        mean4, std = cv2.meanStdDev(cut_img4)
+        value_mean4 = mean4[0, 0]
+
+        cv_img5 = cv2.imdecode(np.frombuffer(file_img5, np.uint8), 0)
+        cut_img5 = ImgGrayscale.center_crop(cv_img5, int(cv_img5.shape[1] * 0.8), int(cv_img5.shape[0] * 0.8))
+        mean5, std = cv2.meanStdDev(cut_img5)
+        value_mean5 = mean5[0, 0]
+
+        cv_img6 = cv2.imdecode(np.frombuffer(file_img6, np.uint8), 0)
+        cut_img6 = ImgGrayscale.center_crop(cv_img6, int(cv_img6.shape[1] * 0.8), int(cv_img6.shape[0] * 0.8))
+        mean6, std = cv2.meanStdDev(cut_img6)
+        value_mean6 = mean6[0, 0]
+
+        cv_img7 = cv2.imdecode(np.frombuffer(file_img7, np.uint8), 0)
+        cut_img7 = ImgGrayscale.center_crop(cv_img7, int(cv_img7.shape[1] * 0.8), int(cv_img7.shape[0] * 0.8))
+        mean7, std = cv2.meanStdDev(cut_img7)
+        value_mean7 = mean7[0, 0]
+
+        cv_img8 = cv2.imdecode(np.frombuffer(file_img8, np.uint8), 0)
+        cut_img8 = ImgGrayscale.center_crop(cv_img8, int(cv_img8.shape[1] * 0.8), int(cv_img8.shape[0] * 0.8))
+        mean8, std = cv2.meanStdDev(cut_img8)
+        value_mean8 = mean8[0, 0]
+
+        x = np.array([[img1_con], [img2_con], [img3_con], [img4_con], [img5_con], [img6_con], [img7_con]])  # 已知浓度
+        y = np.array([[value_mean1], [value_mean2], [value_mean3], [value_mean4],
+                      [value_mean5], [value_mean6], [value_mean7]])  # 根据图片求灰度
+
+        # plt.plot(x, y, 'k.')
+
+        features = x.reshape(-1, 1)
+        target = y
+
+        regression = LinearRegression()
+        model = regression.fit(features, target)
+
+        # model为已知直线（浓度与灰度的直线方程）。
+        # 现给出直线上的点（x2[1], y2[1]） (x2[2], y2[2]) 得出斜率，再通过least_square.func，给定灰度，求浓度
+        x2 = np.array([[0], [0.15], [0.25], [0.45], [0.7]])
+        y2 = model.predict(x2)
+
+        x_pre = least_square.func(x2[1], y2[1], x2[2], y2[2], value_mean8)
+
+        return JsonResponse({"status": 200, "msg": "success", "data": format(10 ** x_pre[0], '.5f')},
+                            json_dumps_params={'ensure_ascii': False})
     except Exception:
         traceback.print_exc()
         return JsonResponse({"status": 500, "msg": "异常!", "errMsg": traceback.format_exc()},

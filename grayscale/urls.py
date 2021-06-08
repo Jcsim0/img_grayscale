@@ -16,14 +16,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from image_detection.views import WebImgGrayscale, get_concentration_by_least_square, search_bt, connect_bt, ToView
+from image_detection.views import WebImgGrayscale, get_concentration_by_least_square, search_bt, ToView, \
+    get_concentration_by_least_square_with_ln
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('img/getConByImgGrayscale', WebImgGrayscale.as_view(), name="web_img_grayscale"),
     path('img/getConByLS', get_concentration_by_least_square,
          name="get_concentration_by_least_square"),
+    path("img/getConByLsWithLn", get_concentration_by_least_square_with_ln,
+         name="get_concentration_by_least_square_with_ln"),
     path('bt/search', search_bt, name="search_bt"),
-    # path('bt/connect', connect_bt, name="connect_bt"),
     path('to/<to>', ToView.go_to, name="ss"),
 ]
