@@ -12,6 +12,7 @@ import datetime
 import time
 import traceback
 from time import sleep
+# daphne -b 0.0.0.0 -p 8088 grayscale.asgi:application
 
 import bluetooth
 from channels.generic.websocket import WebsocketConsumer
@@ -32,7 +33,6 @@ class BtConnectConsumers(WebsocketConsumer):
         self.accept()
 
     def disconnect(self, close_code):
-        print("clossssssssssssssssssssss")
         pass
 
     def receive(self, text_data):
