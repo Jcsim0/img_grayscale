@@ -132,7 +132,7 @@ STATICFILES_DIRS = (
 )
 
 # Log File
-BASE_LOG_DIR = '/root/logs' if 'linux' == sys.platform else os.path.join(BASE_DIR, "logs")
+BASE_LOG_DIR = '/root/img_grayscale_logs' if 'linux' == sys.platform else os.path.join(BASE_DIR, "logs")
 
 LOGGING = {
     'version': 1,  # 保留字
